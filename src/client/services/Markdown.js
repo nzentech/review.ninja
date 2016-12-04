@@ -10,7 +10,7 @@ module.factory('Markdown', ['$HUB', '$stateParams', function($HUB, $stateParams)
 
         var negative = /\!\bfix\b|\!\bresolve\b/g;
         var positive = /\!\bfixed\b|\!\bresolved\b|\!\bcompleted\b/g;
-        var star = /\!\bstar\b|\!\bninjastar\b/g;
+        var star = /\!\bstar\b|\!\bninjastar\b|\blp?gtm\b/gi;
         var unstar = /\!\bunstar\b/;
 
         markdown = markdown.replace(negative, function(flag) {
@@ -35,18 +35,29 @@ module.factory('Markdown', ['$HUB', '$stateParams', function($HUB, $stateParams)
     return {
         render: function(obj) {
             if(obj.body) {
-                $HUB.wrap('markdown', 'render', {
+                $HUB.call('misc', 'renderMarkdown', {
                     text: obj.body,
                     mode: 'gfm',
                     context: $stateParams.user + '/' + $stateParams.repo
                 }, function(err, markdown) {
                     if(!err) {
-                        obj.html = label(markdown.value);
+                        obj.html = label(markdown.value.data);
                     }
                 });
             }
 
             return obj;
+        },
+
+        html: function(body, call) {
+            $HUB.call('misc', 'renderMarkdown', {
+                text: body,
+                mode: 'gfm',
+                context: $stateParams.user + '/' + $stateParams.repo
+            }, function(err, markdown) {
+                var html = err ? null : label(markdown.value.data);
+                call(html);
+            });
         }
     };
 }]);

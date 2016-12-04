@@ -7,6 +7,8 @@
  * @overview Configuration Module
  */
 
+
+var merge = require('merge');
 var mongoURI = require('mongodb-uri');
 
 module.exports = {
@@ -86,14 +88,24 @@ module.exports = {
 
             var uri = mongoURI.parse(process.env.MONGODB || process.env.MONGODB_URI || process.env.MONGOLAB_URI || 'mongodb://127.0.0.1/reviewninja');
 
-            return {
+            var config = uri.options && uri.options.replicaSet ? {
+                replicaset: {
+                    name: uri.options.replicaSet,
+                    members: uri.hosts.map(function(m) { return { host: m.host, port: m.port || 27017 }; })
+                }
+            } : {
+                host: uri.hosts[0].host,
+                port: uri.hosts[0].port || 27017
+            };
+
+            return merge({
+                db: uri.database,
                 user: uri.username,
                 password: uri.password,
-                host: uri.hosts[0].host,
-                port: uri.hosts[0].port || 27017,
-                db: uri.database,
-                collection: 'migrations'
-            };
+                collection: 'migrations',
+                ssl: uri.options && uri.options.ssl
+            }, config);
+
         })(),
 
         mongodb_uri: process.env.MONGODB || process.env.MONGODB_URI || process.env.MONGOLAB_URI || 'mongodb://127.0.0.1/reviewninja',
